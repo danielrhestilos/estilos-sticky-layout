@@ -1,10 +1,10 @@
 {
-  "sticky-layout": {
+  "estilospe-sticky-layout": {
     "allowed": "*",
     "component": "StickyLayout",
     "composition": "children"
   },
-  "sticky-layout.stack-container": {
+  "estilospe-sticky-layout.stack-container": {
     "allowed": "*",
     "component": "StackContainer",
     "composition": "children"
