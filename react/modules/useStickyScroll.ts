@@ -1,5 +1,4 @@
-import { useCallback, useState } from 'react'
-
+import { useCallback, useState, useRef } from 'react'
 import { useWindowListener } from './useWindowListener'
 import { Positions } from '../types'
 
@@ -9,45 +8,35 @@ interface StickyProps {
   stickOffset?: number
   contentHeight: number | string
   wrapperOffsetTop: number
+  onlyWhenScrollingUp?: boolean //  NUEVO
 }
 
-/*
- * Hook responsible for defining if a sticky element should stuck to the viewport or not
- *
- * @param {StickyProps} {
- *   position,
- *   verticalSpacing = 0,
- *   stickOffset = 0,
- *   contentHeight,
- *   wrapperOffsetTop,
- * }
- * @returns { isStuck }
- */
 export const useStickyScroll = ({
   position,
   verticalSpacing = 0,
   stickOffset = 0,
   contentHeight,
   wrapperOffsetTop,
+  onlyWhenScrollingUp = false, //  NUEVO
 }: StickyProps) => {
   const [isStuck, setStuck] = useState<boolean>(false)
+  const lastScrollY = useRef<number>(0) //  Para detectar dirección
 
   const handlePosition = useCallback(
-    (scrollY: number) => {
+    () => {
       if (!contentHeight || typeof contentHeight !== 'number') return
 
       const offset = stickOffset + verticalSpacing
-      let currentPosition = scrollY
+      const currentScrollY = window.scrollY
+      const scrollingUp = currentScrollY < lastScrollY.current
+      lastScrollY.current = currentScrollY
+
+      let currentPosition = currentScrollY
       let stuckPosition = wrapperOffsetTop
 
       if (position === Positions.TOP) {
         stuckPosition -= offset
-        /*
-         * We remove `1` from the current position because stuck elements at the top
-         * of the page must be able to be considered "unstuck".
-         * In example, a mobile header at the top of the page should be considered unstuck
-         * if the user scrolls back to the top of the page.
-         */
+
         if (stuckPosition === 0 && currentPosition === 0) {
           currentPosition -= 1
         }
@@ -56,9 +45,13 @@ export const useStickyScroll = ({
         stuckPosition += offset + contentHeight
       }
 
-      const shouldStick = currentPosition >= stuckPosition
+      let shouldStick = currentPosition >= stuckPosition
 
-      // same state, do nothing
+      //  Si solo queremos stick al subir, y no se está subiendo, no aplicar sticky
+      if (onlyWhenScrollingUp && !scrollingUp) {
+        shouldStick = false
+      }
+
       if (isStuck === shouldStick) return
 
       setStuck(shouldStick)
@@ -70,6 +63,7 @@ export const useStickyScroll = ({
       isStuck,
       stickOffset,
       verticalSpacing,
+      onlyWhenScrollingUp,
     ]
   )
 

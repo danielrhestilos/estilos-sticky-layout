@@ -1,150 +1,72 @@
-# VTEX Sticky Layout
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-0-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
+# 📌 StickyLayoutComponent (React - VTEX IO)
+## ✅ Propósito
+Este componente envuelve contenido que necesita permanecer fijo (sticky/fixed) en la pantalla al hacer scroll. Es útil para elementos como barras de navegación, botones flotantes, o módulos promocionales que deben estar visibles en la parte superior o inferior del viewport.
 
-The Sticky Layout app provides layout structures to help building elements that should be fixed relative to the viewport in certain contexts.
+Se integra con el contexto de stacking (StackContext) para coordinar el comportamiento sticky entre múltiples instancias, evitando superposiciones incorrectas.
 
-> Sticky positioning is a hybrid of relative and fixed positioning. The element is treated as relative positioned until it crosses a specified threshold, at which point it is treated as fixed positioned.
->
-> You can understand more by reading about in the [MDN `position` documentation](https://developer.mozilla.org/en-US/docs/Web/CSS/position#Sticky_positioning).
+## 📦 Dependencias
+React: Manejo del ciclo de vida, estados y referencias.
 
-<!-- @import "[TOC]" {cmd="toc" depthFrom=3 depthTo=6 orderedList=false} -->
+ReactResizeDetector: Detecta cambios en el alto del contenido para ajustar dinámicamente la altura del wrapper.
 
-<!-- code_chunk_output -->
+vtex.css-handles: Aplica clases con convenciones CSS personalizadas.
 
-- [`sticky-layout`](#sticky-layout)
-- [`sticky-layout.stack-container`](#sticky-layoutstack-container)
+StackContext: Contexto que permite a múltiples StickyLayouts coordinar su posición y espacio.
 
-<!-- /code_chunk_output -->
+useStickyScroll: Hook personalizado que determina si el elemento debe estar en modo sticky o no.
 
-## Blocks
+useWindowListener: Hook personalizado que escucha eventos de ventana como DOMContentLoaded y resize.
 
-### `sticky-layout`
+## ⚙️ Props
+Prop	Tipo	Descripción
+position	Positions	Posición donde el sticky debe anclarse (top o bottom).
+verticalSpacing	number	Espaciado en píxeles desde el borde (top/bottom) hasta el contenido sticky.
+zIndex	number	Valor de z-index del elemento sticky. Si no se proporciona, se usa 999.
 
-The `sticky-layout` block is responsible for making its children _stick_ to a certain position on the page when exiting the viewport while scrolling.
+## 🧠 Lógica Interna
+1. Referencias (useRef)
+wrapperRef: Contenedor externo que envuelve el sticky, usado para medir su offsetTop.
 
-**Props:**
+containerRef: Elemento que se vuelve sticky (clase fixed) cuando corresponde.
 
-| Prop name         | Type           | Description                                                                      | Default value |
-| ----------------- | -------------- | -------------------------------------------------------------------------------- | ------------- |
-| `blockClass`      | `String`       | Unique class name to be appended to the container class                          | `""`          |
-| `position`        | `PositionEnum` | Indicates where the component should stick                                       | `N/A`         |
-| `verticalSpacing` | `Number`       | Indicates the distance in pixels from the position chosen in the `position` prop | `0`           |
+2. Estados (useState)
+contentHeight: Almacena la altura del contenido sticky para mantener el layout sin sobresaltos cuando se posiciona como fixed.
 
-`PositionEnum` options:
+wrapperOffsetTop: Guarda la distancia del contenedor sticky respecto al top del documento, usada para determinar cuándo se vuelve "stuck".
 
-| Enum name | Enum value | Description                                  |
-| --------- | ---------- | -------------------------------------------- |
-| `TOP`     | `'top'`    | Component will stick to the top of screen    |
-| `BOTTOM`  | `'bottom'` | Component will stick to the bottom of screen |
+3. Offset dinámico (useCallback + useLayoutEffect)
+Se ejecuta cada 3 segundos un setInterval para actualizar el offsetTop del wrapper en caso de que el layout del DOM haya cambiado dinámicamente.
 
-**CSS Handles:**
+También se actualiza al cargar el DOM y en resize.
 
-| Prop name        | Description                                                                                                   |
-| ---------------- | ------------------------------------------------------------------------------------------------------------- |
-| `container`      | Sticky layout container                                                                                       |
-| `wrapper`        | Wrapper element that takes up the space previously used by the stuck element to prevent the page from jumping |
-| `wrapper--stuck` | Sticky layout wrapper when stuck to a position on the page                                                    |
+4. Detección de sticky (useStickyScroll)
+Calcula si el elemento debe cambiar a fixed basándose en stickOffset, wrapperOffsetTop, position y el scrollY actual del navegador.
 
-**Example usage:**
+5. Manejo de conflictos de posición
+Si el StackContext define una posición y se pasó también por props, se lanza un warning en consola ya que el contexto prevalece.
 
-```jsonc
-{
-  "store.product": {
-    "children": [
-      "flex-layout.row#product-breadcrumb",
-      "flex-layout.row#product-main",
-      "sticky-layout#buy-button"
-    ],
-    "parent": {
-      "challenge": "challenge.address"
-    }
-  },
-  "sticky-layout#buy-button": {
-    "props": {
-      "position": "bottom"
-    },
-    "children": ["flex-layout.row#buy-button"]
-  },
-  "flex-layout.row#buy-button": {
-    "props": {
-      "marginTop": 4,
-      "marginBottom": 7,
-      "paddingBottom": 2
-    },
-    "children": ["buy-button"]
-  }
-}
+## 🧩 Estilos
+Clases CSS (usando vtex.css-handles)
+container: Contenedor principal que cambia entre fixed o relative.
+
+wrapper: Wrapper que contiene al sticky; se le aplica el modificador stuck si está en modo sticky.
+
+Estilo en línea
+containerStyle: Posiciona el sticky en top o bottom con un offset y aplica el zIndex.
+
+wrapperStyle: Mantiene el layout cuando el elemento está en modo sticky, evitando colapsos de altura.
+
+## 🧪 Resize dinámico
+Al cambiar el tamaño del contenido (por ejemplo, si cambia el texto, imagen o botón), ReactResizeDetector actualiza contentHeight solo cuando el elemento no está en modo sticky. Esto evita que el tamaño fijo se actualice cuando ya está posicionado.
+
+## 💡 Ejemplo de uso
 ```
-
-### `sticky-layout.stack-container`
-
-The `sticky-layout.stack-container` block can be used to orchestrate multiple `sticky-layout`s to have a stack behavior instead of one being on top of the other.
-
-**Props:**
-
-| Prop name  | Type           | Description                                                                                               | Default value |
-| ---------- | -------------- | --------------------------------------------------------------------------------------------------------- | ------------- |
-| `position` | `PositionEnum` | Indicates where the component should stick. _It overrides the `position` of its children `sticky-layout`_ | `N/A`         |
-
-`PositionEnum` options:
-
-| Enum name | Enum value | Description                                  |
-| --------- | ---------- | -------------------------------------------- |
-| `TOP`     | `'top'`    | Component will stick to the top of screen    |
-| `BOTTOM`  | `'bottom'` | Component will stick to the bottom of screen |
-
-**Example usage:**
-
-Imagine three blocks: the first and the last being a `sticky-layout` and the second being any other block. A gap between both `sticky-layout`s will appear the moment the user starts scrolling the page. By defining those blocks inside a `sticky-layout.stack-container`, the second `sticky-layout` block will stick to the first `sticky-layout` instead of respecting the aformetioned gap or being one on top of the other.
-
-```jsonc
-{
-  "header": {
-    "blocks": ["header-layout.desktop"]
-  },
-  "header.full": {
-    "blocks": ["header-layout.desktop"]
-  },
-  "header-layout.desktop": {
-    // define a stack-container
-    "children": ["sticky-layout.stack-container#header"]
-  },
-  "sticky-layout.stack-container#header": {
-    "props": {
-      "position": "top"
-    },
-    "children": [
-      "sticky-layout#links-menu",
-      // this notification.bar is not sticky, it will be scrolled away
-      "notification.bar#home",
-      "sticky-layout#main-menu"
-    ]
-  },
-  "notification.bar#home": {
-    "props": {
-      "content": "SELECTED ITEMS ON SALE! CHECK IT OUT!"
-    }
-  },
-  "sticky-layout#links-menu": {
-    "children": ["vtex.menu@2.x:menu#websites"]
-  },
-  "sticky-layout#main-menu": {
-    "children": ["vtex.menu@2.x:menu#category-menu"]
-  }
-}
+//tsx
+<StickyLayoutComponent position="top" verticalSpacing={16} zIndex={1000}>
+  <MyFloatingBar />
+</StickyLayoutComponent>
 ```
+### ⚠️ Consideraciones
+Si el componente está dentro de un StackContainer, se recomienda no pasar explícitamente la prop position ya que será sobrescrita.
 
-## Contributors ✨
-
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<!-- markdownlint-enable -->
-<!-- prettier-ignore-end -->
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+Actualiza su estado de sticky cada 3 segundos de forma pasiva, lo que mejora el rendimiento frente a una detección continua en scroll.

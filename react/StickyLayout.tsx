@@ -21,6 +21,7 @@ interface Props {
   position?: Positions
   verticalSpacing?: number
   zIndex?: number
+  onlyWhenScrollingUp?: boolean //  NUEVA PROP OPCIONAL
 }
 
 const StickyLayoutComponent: FC<Props> = ({
@@ -28,6 +29,7 @@ const StickyLayoutComponent: FC<Props> = ({
   position: positionProp,
   zIndex,
   verticalSpacing = 0,
+  onlyWhenScrollingUp = false, //  VALOR POR DEFECTO
 }) => {
   const handles = useCssHandles(CSS_HANDLES)
 
@@ -72,6 +74,7 @@ const StickyLayoutComponent: FC<Props> = ({
     verticalSpacing,
     contentHeight,
     wrapperOffsetTop,
+    onlyWhenScrollingUp, //  NUEVO
   })
 
   if (positionContext != null && positionProp != null) {
