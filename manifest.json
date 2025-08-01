@@ -1,7 +1,7 @@
 {
   "vendor": "estilospe",
   "name": "sticky-layout",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "title": "Sticky Layout",
   "description": "Sticky Layout component",
   "builders": {
